@@ -1,17 +1,17 @@
 import * as fs from 'fs'
 
-interface FileValidatorOptions {
+interface FilesValidatorOptions {
   path: string
   allowExt?: string[]
   // Max size in bytes
   maxSize?: number
 }
 
-export class FileValidator {
+export class FilesValidator {
   private files: Array<Express.Multer.File>
-  private options: FileValidatorOptions
+  private options: FilesValidatorOptions
 
-  constructor(files: Array<Express.Multer.File>, options: FileValidatorOptions) {
+  constructor(files: Array<Express.Multer.File>, options: FilesValidatorOptions) {
     this.files = files
     this.options = options
   }

@@ -1,6 +1,6 @@
 import { OnModuleInit } from '@nestjs/common';
-import { MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
-import { Server } from 'socket.io';
+import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import { Server, Socket } from 'socket.io';
 
 @WebSocketGateway()
 export class ChatGateway implements OnModuleInit {
@@ -9,13 +9,14 @@ export class ChatGateway implements OnModuleInit {
 
   public onModuleInit() {
     this.server.on('connection', socket => {
-
+      console.log(socket.id)
     })
   }
 
   @SubscribeMessage('message')
-  public handleMessage(@MessageBody() message, payload: any) {
-    console.log(message)
+  public handleMessage(@MessageBody() message, @ConnectedSocket() client: Socket) {
+    console.log(client.id)
+  
     this.server.emit('receive-message', "hai juga")
   }
 }
