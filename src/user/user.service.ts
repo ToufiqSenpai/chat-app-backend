@@ -33,28 +33,35 @@ export class UserService {
   }
 
   public async addFriend(fromUser: number, toUser: string): Promise<void> {
-    const currentUserData = await this.prisma.user.findFirst({ where: { id: parseInt(toUser) } })
+    const userData = await this.prisma.user.findFirst({ where: { id: parseInt(toUser) }})
+    const friendRequest = userData.friendRequest
 
-    if((currentUserData.friendRequest as number[]).includes(fromUser)) {
+    if((friendRequest as number[]).includes(fromUser)) {
       throw new ConflictException(new ResponseBody({
         status: HttpStatus.CONFLICT,
         message: 'Friend request already sended'
       }))
     }
+    
+    (friendRequest as number[]).push(fromUser)
 
     await this.prisma.user.update({
       where: { id: parseInt(toUser) },
-      data: { friendRequest: (currentUserData.friendRequest as number[]).push(fromUser)}
-    })
+      data: { friendRequest }
+    })    
   }
 
-  public async acceptFreind(uid: number): Promise<void> {
-    await this.prisma.user.update({
-      where: {
-        id: uid
-      },
-      data: {
-        // freind
+  public async getFriendRequest(id: number): Promise<object[]> {
+    const requestId = await this.prisma.user.findFirst({ where: { id }})
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: (requestId.friendRequest as number) }}
+    })
+
+    return users.map(user => {
+      return {
+        id: user.id,
+        username: user.username,
+        avatar: user.avatar
       }
     })
   }

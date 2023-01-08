@@ -1,5 +1,5 @@
 import { BadRequestException, Controller, Get, HttpStatus, NotFoundException, Param, Query, UnprocessableEntityException } from '@nestjs/common';
-import { Post, UseGuards, UseInterceptors, Req, UploadedFiles } from '@nestjs/common/decorators';
+import { Post, UseGuards, UseInterceptors, Req, UploadedFiles, Put } from '@nestjs/common/decorators';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { Request } from 'express';
 import { AccessTokenGuard } from 'src/token/accesstoken.guard';
@@ -28,7 +28,7 @@ export class UserController {
     })
   }
 
-  @Post('change-avatar')
+  @Put('change-avatar')
   @UseInterceptors(FilesInterceptor('avatar', 1, multerStorage('./assets/users/avatar')))
   public async changeAvatar(@UploadedFiles() files: Array<Express.Multer.File>, @Req() req: Request) {
     const filesValidator = new FilesValidator(files, {
@@ -66,8 +66,13 @@ export class UserController {
     })
   }
 
-  @Get('accept-friend/:uid')
-  public async acceptFreind(@Param('uid') uid: string) {
-    
+  @Get('get-friend-request')
+  public async getFriendRequest(@Req() req: Request) {
+    const friendRequest = await this.userService.getFriendRequest((req.user as any).id)
+
+    return new ResponseBody({
+      status: HttpStatus.OK,
+      data: friendRequest
+    })
   }
 }

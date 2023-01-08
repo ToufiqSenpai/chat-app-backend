@@ -19,12 +19,12 @@ model User {
   updateAt      DateTime @updatedAt
   refreshToken  String?
   avatar        String?
-  friendId      Json?
-  friendRequest Json?
+  friendId      Json?    @default("[]")
+  friendRequest Json?    @default("[]")
 }
 
 model Chat {
   id       Int    @id @default(autoincrement())
-  chatId   String
+  chatId   String 
   chatData Json
 }
