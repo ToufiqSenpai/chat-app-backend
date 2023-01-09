@@ -67,12 +67,36 @@ export class UserController {
   }
 
   @Get('get-friend-request')
-  public async getFriendRequest(@Req() req: Request) {
+  public async getFriendRequest(@Req() req: Request): Promise<ResponseBody> {
     const friendRequest = await this.userService.getFriendRequest((req.user as any).id)
 
     return new ResponseBody({
       status: HttpStatus.OK,
       data: friendRequest
+    })
+  }
+
+  @Get('accept-friend')
+  public async acceptFriend(@Query() query: any, @Req() req: Request) {
+    if((!query.uid || !query.accept) || !['true', 'false'].includes(query.accept) || Number.isNaN(query.uid)) {
+      throw new BadRequestException(new ResponseBody({
+        status: HttpStatus.BAD_REQUEST,
+        message: 'Invalid query'
+      }))
+    }
+
+    await this.userService.acceptFriend(parseInt(query.uid), (req.user as any).id, query.accept)
+
+    return 'ok'
+  }
+
+  @Get('get-user-data')
+  public async getUserData(@Req() req: Request): Promise<ResponseBody> {
+    const userData = await this.userService.getUserData((req.user as any).id)
+
+    return new ResponseBody({
+      status: HttpStatus.OK,
+      data: userData
     })
   }
 }

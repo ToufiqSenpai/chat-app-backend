@@ -2,6 +2,7 @@ import { ConflictException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaClient, User } from '@prisma/client';
 import * as fs from 'fs'
 import { ResponseBody } from 'src/utils/response-body';
+import uuid from 'src/utils/uuid';
 
 @Injectable()
 export class UserService {
@@ -65,4 +66,23 @@ export class UserService {
       }
     })
   }
-}
+
+  public async acceptFriend(user1: number, user2: number, accept: boolean) {
+    const user1Data = await this.prisma.user.findFirst({ where: { id: user1 }})
+    const user2Data = await this.prisma.user.findFirst({ where: { id: user2 }})
+    const chatId = uuid()
+    
+    if(accept) {
+      (user1Data.friendId as string[]).push(chatId);
+      (user2Data.friendId as string[]).push(chatId);
+
+      await this.prisma.chat.create({ data: { chatId }})
+      await this.prisma.user.update({ where: { id: user1Data.id }, data: { friendId: user1Data.friendId }})
+      await this.prisma.user.update({ where: { id: user2Data.id }, data: { friendId: user2Data.friendId }})
+    }
+  }
+
+  public async getUserData(uid: number): Promise<User> {
+    return await this.prisma.user.findFirst({ where: { id: uid }})
+  }
+} 
