@@ -38,7 +38,6 @@ export class AuthService {
   }
 
   public async accessToken(id: number) {
-
     const accessToken = this.jwt.sign({
       id,
       salt: randomString(32)

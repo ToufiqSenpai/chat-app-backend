@@ -24,7 +24,8 @@ model User {
 }
 
 model Chat {
-  id       Int    @id @default(autoincrement())
-  chatId   String 
-  chatData Json   @default("[]")
+  id            Int    @id @default(autoincrement())
+  chatId        String
+  chatUsernames Json   @default("[]")
+  messageData   Json   @default("[]")
 }

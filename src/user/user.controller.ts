@@ -99,4 +99,14 @@ export class UserController {
       data: userData
     })
   }
+
+  @Get('get-all-chats')
+  public async getAllChats(@Req() req: Request) {
+    const chats = await this.userService.getAllChats((req.user as any).id)
+
+    return new ResponseBody({
+      status: HttpStatus.OK,
+      data: chats
+    })
+  }
 }
