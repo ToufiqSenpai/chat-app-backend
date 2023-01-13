@@ -1,6 +1,6 @@
 export interface SendMessageBody {
   text: string
-  recipientUid: number
-  friendId: string
+  recipientId: number
+  chatId: string
   authorId: number
 }

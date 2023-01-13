@@ -1,5 +1,5 @@
 import { BadRequestException, Controller, Get, HttpStatus, NotFoundException, Param, Query, UnprocessableEntityException } from '@nestjs/common';
-import { Post, UseGuards, UseInterceptors, Req, UploadedFiles, Put } from '@nestjs/common/decorators';
+import { Post, UseGuards, UseInterceptors, Req, UploadedFiles, Put, Res } from '@nestjs/common/decorators';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { Request } from 'express';
 import { AccessTokenGuard } from 'src/token/accesstoken.guard';
@@ -77,7 +77,7 @@ export class UserController {
   }
 
   @Get('accept-friend')
-  public async acceptFriend(@Query() query: any, @Req() req: Request) {
+  public async acceptFriend(@Query() query: any, @Req() req: Request): Promise<ResponseBody> {
     if((!query.uid || !query.accept) || !['true', 'false'].includes(query.accept) || Number.isNaN(query.uid)) {
       throw new BadRequestException(new ResponseBody({
         status: HttpStatus.BAD_REQUEST,
@@ -87,7 +87,9 @@ export class UserController {
 
     await this.userService.acceptFriend(parseInt(query.uid), (req.user as any).id, query.accept)
 
-    return 'ok'
+    return new ResponseBody({
+      status: HttpStatus.OK
+    })
   }
 
   @Get('get-user-data')

@@ -80,6 +80,9 @@ export class UserService {
       await this.prisma.chat.create({ data: { chatId, chatUsernames: [user1Data.username, user2Data.username] }})
       await this.prisma.user.update({ where: { id: user1Data.id }, data: { friendId: user1Data.friendId }})
       await this.prisma.user.update({ where: { id: user2Data.id }, data: { friendId: user2Data.friendId }})
+    } else {
+      const newFriendReq = (user1Data.friendRequest as number[]).filter(req => req != user2Data.id)
+      await this.prisma.user.update({ where: { id: user1Data.id }, data: { friendRequest: newFriendReq }})
     }
   }
 
@@ -93,10 +96,17 @@ export class UserService {
 
     return await Promise.all(userChats.map(async userChat => {
       const friendName = (userChat.chatUsernames as string[]).filter(username => username != user.username)[0]
-      const friendAvatar = await this.prisma.user.findFirst({ where: { username: friendName }})
-      delete userChat.chatUsernames
+      const friend = await this.prisma.user.findFirst({ where: { username: friendName }})
+      delete userChat.chatUsernames, userChat.id
 
-      return { ...userChat, friendName, friendAvatar: friendAvatar.avatar }
+      return { 
+        ...userChat, 
+        friendMetadata: {
+          id: friend.id,
+          username: friend.username,
+          avatar: friend.avatar
+        }
+      }
     }))
   }
 }

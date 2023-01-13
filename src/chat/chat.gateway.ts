@@ -1,5 +1,5 @@
 import { OnModuleInit } from '@nestjs/common';
-import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import { ConnectedSocket, MessageBody, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { PrismaClient } from '@prisma/client';
 import { Server, Socket } from 'socket.io';
 import { OnlineUsers } from './interfaces';
@@ -7,7 +7,7 @@ import { MessageData } from './interfaces/MessageData';
 import { SendMessageBody } from './interfaces/SendMessageBody';
 
 @WebSocketGateway({ cors: process.env.CLIENT_URL })
-export class ChatGateway implements OnModuleInit {
+export class ChatGateway implements OnModuleInit, OnGatewayDisconnect {
   @WebSocketServer()
   private server: Server
 
@@ -28,16 +28,19 @@ export class ChatGateway implements OnModuleInit {
 
   @SubscribeMessage('send-message')
   public async handleMessage(@MessageBody() message: SendMessageBody, @ConnectedSocket() client: Socket) {
-    const recipientConnectionId = this.onlineUsers.filter(users => users.id == message.recipientUid)[0]
-    
+    const recipientConnectionId = this.onlineUsers.filter(users => users.id == message.recipientId)[0]
     if(recipientConnectionId) {
       this.server.to(recipientConnectionId.connectionId).emit('receive-message', {
-        text: message.text,
-        myMessage: false
+        chatId: message.chatId,
+        messageData: {
+          text: message.text,
+          authorId: message.authorId,
+          isRead: false
+        }
       })
     }
 
-    const currentChat = await this.prisma.chat.findFirst({ where: { chatId: message.friendId }});
+    const currentChat = await this.prisma.chat.findFirst({ where: { chatId: message.chatId }});
 
     (currentChat.messageData as unknown[]).push({
       text: message.text,
@@ -49,5 +52,9 @@ export class ChatGateway implements OnModuleInit {
       where: { id: currentChat.id },
       data: { messageData: currentChat.messageData}
     })
+  }
+
+  public handleDisconnect(client: any) {
+    this.onlineUsers = this.onlineUsers.filter(user => user.connectionId != client.id)
   }
 }
