@@ -103,6 +103,9 @@ export class UserService {
       await this.prisma.chat.create({ data: { chatId, chatUsernames: [user1Data.username, user2Data.username], messageData: [] }})
       await this.prisma.user.update({ where: { id: user1Data.id }, data: { friendId: friendId1 }})
       await this.prisma.user.update({ where: { id: user2Data.id }, data: { friendId: friendId2 }})
+      
+      const newFriendReq = (user1Data.friendRequest as number[]).filter(req => req != user2Data.id)
+      await this.prisma.user.update({ where: { id: user1Data.id }, data: { friendRequest: newFriendReq }})
     } else {
       const newFriendReq = (user1Data.friendRequest as number[]).filter(req => req != user2Data.id)
       await this.prisma.user.update({ where: { id: user1Data.id }, data: { friendRequest: newFriendReq }})
