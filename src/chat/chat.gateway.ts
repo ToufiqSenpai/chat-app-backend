@@ -23,12 +23,14 @@ export class ChatGateway implements OnModuleInit, OnGatewayDisconnect {
 
   @SubscribeMessage('login')
   public async login(@MessageBody() id: number, @ConnectedSocket() client: Socket) {
+    console.log(id)
     this.onlineUsers.push({ id, connectionId: client.id })
   }
 
   @SubscribeMessage('send-message')
   public async handleMessage(@MessageBody() message: SendMessageBody, @ConnectedSocket() client: Socket) {
     const recipientConnectionId = this.onlineUsers.filter(users => users.id == message.recipientId)[0]
+
     if(recipientConnectionId) {
       this.server.to(recipientConnectionId.connectionId).emit('receive-message', {
         chatId: message.chatId,

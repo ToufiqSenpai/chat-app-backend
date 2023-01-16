@@ -17,15 +17,16 @@ model User {
   password      String
   createdAt     DateTime @default(now())
   updateAt      DateTime @updatedAt
-  refreshToken  String?
   avatar        String?
-  friendId      Json?    @default("[]")
-  friendRequest Json?    @default("[]")
+  friendId      Json?    
+  friendRequest Json?    
 }
 
 model Chat {
-  id            Int    @id @default(autoincrement())
+  id            Int      @id @default(autoincrement())
   chatId        String
-  chatUsernames Json   @default("[]")
-  messageData   Json   @default("[]")
+  chatUsernames Json    
+  messageData   Json
+  createdAt     DateTime @default(now())
+  updateAt      DateTime @updatedAt
 }

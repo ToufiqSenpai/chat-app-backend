@@ -36,16 +36,21 @@ export class UserService {
 
   public async addFriend(fromUser: number, toUser: string): Promise<void> {
     const userData = await this.prisma.user.findFirst({ where: { id: parseInt(toUser) }})
-    const friendRequest = userData.friendRequest
+    let friendRequest = userData.friendRequest
 
-    if((friendRequest as number[]).includes(fromUser)) {
+    if((friendRequest as number[])?.includes(fromUser)) {
       throw new ConflictException(new ResponseBody({
         status: HttpStatus.CONFLICT,
         message: 'Friend request already sended'
       }))
     }
     
-    (friendRequest as number[]).push(fromUser)
+    if(!friendRequest) {
+      friendRequest = [];
+      (friendRequest as number[]).push(fromUser);
+    } else {
+      (friendRequest as number[]).push(fromUser);
+    }
 
     await this.prisma.user.update({
       where: { id: parseInt(toUser) },
@@ -55,6 +60,11 @@ export class UserService {
 
   public async getFriendRequest(id: number): Promise<object[]> {
     const requestId = await this.prisma.user.findFirst({ where: { id }})
+
+    if(!requestId.friendRequest) {
+      return []
+    }
+
     const users = await this.prisma.user.findMany({
       where: { id: { in: (requestId.friendRequest as number) }}
     })
@@ -71,15 +81,28 @@ export class UserService {
   public async acceptFriend(user1: number, user2: number, accept: boolean) {
     const user1Data = await this.prisma.user.findFirst({ where: { id: user1 }})
     const user2Data = await this.prisma.user.findFirst({ where: { id: user2 }})
+    let friendId1 = user1Data.friendId
+    let friendId2 = user2Data.friendId
     const chatId = uuid()
     
     if(accept) {
-      (user1Data.friendId as string[]).push(chatId);
-      (user2Data.friendId as string[]).push(chatId);
+      if(!friendId1) {
+        friendId1 = [];
+        (friendId1 as string[]).push(chatId);
+      } else {
+        (friendId1 as string[]).push(chatId);
+      }
 
-      await this.prisma.chat.create({ data: { chatId, chatUsernames: [user1Data.username, user2Data.username] }})
-      await this.prisma.user.update({ where: { id: user1Data.id }, data: { friendId: user1Data.friendId }})
-      await this.prisma.user.update({ where: { id: user2Data.id }, data: { friendId: user2Data.friendId }})
+      if(!friendId2) {
+        friendId2 = [];
+        (friendId2 as string[]).push(chatId);
+      } else {
+        (friendId2 as string[]).push(chatId);
+      }
+
+      await this.prisma.chat.create({ data: { chatId, chatUsernames: [user1Data.username, user2Data.username], messageData: [] }})
+      await this.prisma.user.update({ where: { id: user1Data.id }, data: { friendId: friendId1 }})
+      await this.prisma.user.update({ where: { id: user2Data.id }, data: { friendId: friendId2 }})
     } else {
       const newFriendReq = (user1Data.friendRequest as number[]).filter(req => req != user2Data.id)
       await this.prisma.user.update({ where: { id: user1Data.id }, data: { friendRequest: newFriendReq }})
@@ -92,6 +115,9 @@ export class UserService {
 
   public async getAllChats(uid: number) {
     const user = await this.prisma.user.findFirst({ where: { id: uid }})
+
+    if(!user.friendId) return []
+
     const userChats = await this.prisma.chat.findMany({ where: { chatId: { in: user.friendId as string[] }}})
 
     return await Promise.all(userChats.map(async userChat => {

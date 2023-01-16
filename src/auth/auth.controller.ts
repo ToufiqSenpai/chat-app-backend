@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpStatus, HttpCode, Res, Get, Req } from '@nestjs/common';
+import { Controller, Post, Body, HttpStatus, HttpCode, Res, Get, Req, Headers } from '@nestjs/common';
 import { LoginProps, SignupData, SignupProps } from './dto';
 import { PrismaClient } from '@prisma/client';
 import * as validate from 'class-validator-ext'
@@ -10,8 +10,7 @@ import { Request, Response } from 'express';
 
 @Controller('auth')
 export class AuthController {
-  private readonly prisma: PrismaClient = new PrismaClient()
-
+  
   constructor(private authService: AuthService) {}
 
   @Post('signup')
@@ -46,14 +45,29 @@ export class AuthController {
   @Get('access-token')
   public async accessToken(@Req() req: Request) {
     const refreshToken = req.cookies.refreshToken
-    const checkUser = await this.prisma.user.findFirst({
-      where: { refreshToken }
+    const accessToken = await this.authService.accessToken(refreshToken)
+
+    return accessToken
+  }
+
+  @Get('logout')
+  @HttpCode(204)
+  public logout(@Res({ passthrough: true }) res: Response) {
+    res.clearCookie('refreshToken')
+  }
+
+  @Get('is-login')
+  public isLogin(@Headers('Authorization') refreshToken: string) {
+    const isVerified = this.authService.isLogin(refreshToken)
+
+    if(!isVerified) {
+      throw new UnauthorizedException(new ResponseBody({
+        status: HttpStatus.UNAUTHORIZED
+      }))
+    }
+
+    return new ResponseBody({
+      status: HttpStatus.OK
     })
-
-    if(!checkUser) throw new UnauthorizedException(new ResponseBody({
-      status: HttpStatus.UNAUTHORIZED
-    }))
-
-    return this.authService.accessToken(checkUser.id)
   }
 }
